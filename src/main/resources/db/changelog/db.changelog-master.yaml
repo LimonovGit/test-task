@@ -1,0 +1,7 @@
+databaseChangeLog:
+  - include:
+      file: /db/changelog/table/calendar.sql
+  - include:
+      file: /db/changelog/table/consultant.sql
+  - include:
+      file: /db/changelog/table/event.sql
