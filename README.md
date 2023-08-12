@@ -33,43 +33,43 @@ public void convertToSqlQueryAndSave(Workbook workbook) {
       consultantRepository.batchSave(builderQuery.toString());
   }
 
-  private int recursiveConvert(Sheet sheet,
-                               int currRowNum,
-                               int currCellNum,
-                               Map<String, String> currState,
-                               StringBuilder result){
-      Cell currCell = sheet.getRow(currRowNum).getCell(currCellNum);
-      String cellName = NAME_MAPPING.get(currCellNum);
-      currState.put(cellName, currCell.getStringCellValue());
-      int maxRow = currRowNum;
-      //если дошли до подразделения, то готовы собрать консультанта
-      if(currCellNum >= SUBDIVISION_CELL){
-          addConsultantToAnswer(currState, result, sheet, currRowNum);
-      }else{
-          //иначе пробуем спускаться по дереву
-          Cell nextCell = nullSafeGetCell(currRowNum+1, currCellNum+1, sheet);
-          if(nextCell == null){
-              //на входных данных, это значит что есть служба, но нет подразделения
-              addConsultantToAnswer(currState, result, sheet, currRowNum);
-          }else{
-              //переход на след. уровень вложенности
-              maxRow = recursiveConvert(sheet, currRowNum+1, currCellNum+1, currState, result);
-          }
-      }
+private int recursiveConvert(Sheet sheet,
+                             int currRowNum,
+                             int currCellNum,
+                             Map<String, String> currState,
+                             StringBuilder result){
+    Cell currCell = sheet.getRow(currRowNum).getCell(currCellNum);
+    String cellName = NAME_MAPPING.get(currCellNum);
+    currState.put(cellName, currCell.getStringCellValue());
+    int maxRow = currRowNum;
+    //если дошли до подразделения, то готовы собрать консультанта
+    if(currCellNum >= SUBDIVISION_CELL){
+        addConsultantToAnswer(currState, result, sheet, currRowNum);
+    }else{
+        //иначе пробуем спускаться по дереву
+        Cell nextCell = nullSafeGetCell(currRowNum+1, currCellNum+1, sheet);
+        if(nextCell == null){
+            //на входных данных, это значит что есть служба, но нет подразделения
+            addConsultantToAnswer(currState, result, sheet, currRowNum);
+        }else{
+            //переход на след. уровень вложенности
+            maxRow = recursiveConvert(sheet, currRowNum+1, currCellNum+1, currState, result);
+        }
+    }
 
-      int rowDiff = maxRow - currRowNum;
-      int nextRow = currRowNum + rowDiff + 1;
-      //исходя из максимальной глубины обхода вычисляем на сколько нужно спуститься вниз
-      Cell nextCellObj = nullSafeGetCell(nextRow, currCellNum, sheet);
-      if(nextCellObj != null){
-          //переход на след. элемент текущей вложенности
-          return recursiveConvert(sheet, nextRow, currCellNum, currState, result);
-      }else{
-          //текущая вложенность закончилась, очищаем состояние и идем назад
-          currState.put(cellName, null);
-          return maxRow;
-      }
-  }
+    int rowDiff = maxRow - currRowNum;
+    int nextRow = currRowNum + rowDiff + 1;
+    //исходя из максимальной глубины обхода вычисляем на сколько нужно спуститься вниз
+    Cell nextCellObj = nullSafeGetCell(nextRow, currCellNum, sheet);
+    if(nextCellObj != null){
+        //переход на след. элемент текущей вложенности
+        return recursiveConvert(sheet, nextRow, currCellNum, currState, result);
+    }else{
+        //текущая вложенность закончилась, очищаем состояние и идем назад
+        currState.put(cellName, null);
+        return maxRow;
+    }
+}
 ```
 После сбора запроса, результат сохраняется в базу.
 
