@@ -1,16 +1,19 @@
-# test-task
-Выполнение тестового задания:
-## 1) Условие:
-  ```
-•	Необходимо распарсить предоставленный файл структуры с сохранением иерархии подразделений и записи ответственных к подразделению.
-    Результат парсинга должен собрать SQL запрос и записать результат в базу результат.
-•	С базы необходимо выгрузить данные в JSON формате по консультантам.
-    Формат данных должен соответствовать стандарту REST в выгрузке должны быть список консультантов со списком служб и суммой по количеству задач.
+# Тестовое задание
+- [Задача 1.1](#задача-11)
+- [Задача 1.2](#задача-12)
+- [Задача 2](#задача-2)
 
-  ```
+
+## Задача 1.1
+### Условие:
+
+> Необходимо распарсить предоставленный файл структуры с сохранением иерархии подразделений и записи ответственных к подразделению.
+    Результат парсинга должен собрать SQL запрос и записать результат в базу результат.
+
 ## Решение: 
 
-### 1.1) Для реализации парсинга был реализован рекурсивный алгоритм обхода.
+Для реализации парсинга был реализован рекурсивный алгоритм обхода файла 
+как по древовидной структуре.
   
 ```java
 static final Map<Integer, String> NAME_MAPPING = new HashMap<>();
@@ -70,22 +73,70 @@ private int recursiveConvert(Sheet sheet,
         return maxRow;
     }
 }
+
+private void addConsultantToAnswer(Map<String, String> currState, StringBuilder result, Sheet sheet, int row){
+    Row sheetRow = sheet.getRow(row);
+    //небезопасно, лучше использовать prepareStatement, но по условию нужно было собрать запрос
+    String newAppend = String.format("('%s', '%s', '%s', '%s', '%s', %d), ",
+            currState.get("Дивизион"),
+            currState.get("Направление"),
+            currState.get("Служба"),
+            currState.get("Подразделение"),
+            sheetRow.getCell(CONSULTANT_CELL).getStringCellValue(),
+            (int)(sheetRow.getCell(NUM_OF_TASK_CELL).getNumericCellValue() * 100));
+    result.append(newAppend);
+}
+
+private Cell nullSafeGetCell(int row, int cell, Sheet sheet){
+    if(row > sheet.getLastRowNum())
+        return null;
+    if(cell > sheet.getRow(row).getLastCellNum())
+        return null;
+    return sheet.getRow(row).getCell(cell);
+}
 ```
 После сбора запроса, результат сохраняется в базу.
 
-### 1.2) Для запроса всех консультантов использовал такой запрос
+
+## Задача 1.2
+
+### Условие:
+
+> С базы необходимо выгрузить данные в JSON формате по консультантам.
+> Формат данных должен соответствовать стандарту REST в выгрузке должны быть список консультантов со списком служб и суммой по количеству задач.
+ 
+ ### Решение: 
+ 
+Для запроса всех консультантов использовал такой запрос.
 
 ```sql
 SELECT c.full_name as fullName,
-  sum(c.num_of_tasks) as sumOfTasks,
-  ARRAY_AGG(c.service) as services
-  FROM consultant c GROUP BY 1
+sum(c.num_of_tasks) as sumOfTasks,
+ARRAY_AGG(c.service) as services
+FROM consultant c GROUP BY 1
 
 ```
 
-## 2) Условие:
+Данный запрос вызывался из контроллера спринг бута.
 
-Сделайте рефакторинг
+```java
+
+@RestController
+@RequestMapping("/consultant")
+public class ConsultantController {
+    ConsultantRepository consultantRepository;
+
+    @GetMapping
+    public List<ConsultantAggregateResponseDto> getAllConsultants(){
+        return consultantRepository.getAll();
+    }
+}
+
+```
+## Задача 2
+### Условие:
+
+> Сделайте рефакторинг
    
 ```java
 public List<Event> getEventByData(int id, Date data1, Date date2) {
@@ -100,7 +151,7 @@ public List<Event> getEventByData(int id, Date data1, Date date2) {
 }
 ```
 
-## Решение:
+### Решение:
 
 Вся логика из сервиса ушла в запрос.
 
@@ -126,7 +177,8 @@ public List<Event> getAllByCalendarIdAndBetweenDates(Long calendarId, Date dtSta
           .build(), calendarId, dtStart, dtEnd);
 }
 ```
-и создание таблицы:
+
+Создание таблицы:
 
 ```sql
 
