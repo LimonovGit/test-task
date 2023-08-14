@@ -13,8 +13,12 @@
 ## Решение: 
 
 Для реализации парсинга использовался модернизированный DFS с запоминанием самого глубокого состояния
-  
+
+
+
 ```java
+ru/efko/testtask/service/impl/ParserServiceImpl.java
+======================================================================
 static final Map<Integer, String> NAME_MAPPING = new HashMap<>();
 static final Integer CONSULTANT_CELL = 4;
 static final Integer NUM_OF_TASK_CELL = 5;
@@ -26,6 +30,7 @@ static {
     NAME_MAPPING.put(2, "Служба");
     NAME_MAPPING.put(3, "Подразделение");
 }
+
 public void convertToSqlQueryAndSave(Workbook workbook) {
       StringBuilder builderQuery = new StringBuilder("INSERT INTO CONSULTANT (division, directing, service, subdivision, full_name, num_of_tasks) values ");
       Sheet sheet = workbook.getSheetAt(0);
@@ -58,17 +63,18 @@ private int recursiveConvert(Sheet sheet,
             maxRow = recursiveConvert(sheet, currRowNum+1, currCellNum+1, currState, result);
         }
     }
+    //очищаем текущее состояние
+    currState.put(cellName, null);
 
     int rowDiff = maxRow - currRowNum;
     int nextRow = currRowNum + rowDiff + 1;
     //исходя из максимальной глубины обхода вычисляем на сколько нужно спуститься вниз
-    Cell nextCellObj = nullSafeGetCell(nextRow, currCellNum, sheet);
-    if(nextCellObj != null){
+    Cell nextCell = nullSafeGetCell(nextRow, currCellNum, sheet);
+    if(nextCell != null){
         //переход на след. элемент текущей вложенности
         return recursiveConvert(sheet, nextRow, currCellNum, currState, result);
     }else{
-        //текущая вложенность закончилась, очищаем состояние и идем назад
-        currState.put(cellName, null);
+        //текущая вложенность закончилась, идем назад
         return maxRow;
     }
 }
@@ -117,7 +123,8 @@ FROM consultant c GROUP BY 1
 Данный запрос вызывался из контроллера спринг бута.
 
 ```java
-
+ru/efko/testtask/controller/ConsultantController.java
+======================================================================
 @RestController
 @RequestMapping("/consultant")
 public class ConsultantController {
@@ -153,11 +160,14 @@ public List<Event> getEventByData(int id, Date data1, Date date2) {
 Вся логика из сервиса ушла в запрос.
 
 ```java
+ru/efko/testtask/service/impl/EventServiceImpl.java
+======================================================================
 public List<Event> getAllByCalendarIdAndBetweenDates(Long calendarId, Date dtStart, Date dtEnd) {
         return eventRepository.getAllByCalendarIdAndBetweenDates(calendarId, dtStart, dtEnd);
 }
-
------------------------------------------------
+======================================================================
+ru/efko/testtask/reposiroty/impl/EventRepositoryImpl.java
+======================================================================
 
 static String GET_ALL_BY_CALENDAR_QUERY = "select e.id, e.calendar_id, e.dt_start, e.dt_end " +
       "from events e " +
