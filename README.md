@@ -95,8 +95,6 @@ private Cell nullSafeGetCell(int row, int cell, Sheet sheet){
     return sheet.getRow(row).getCell(cell);
 }
 ```
-После сбора запроса, результат сохраняется в базу.
-
 
 ## Задача 1.2
 
