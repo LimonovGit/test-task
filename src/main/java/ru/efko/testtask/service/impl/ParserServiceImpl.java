@@ -82,17 +82,18 @@ public class ParserServiceImpl implements ParserService {
                 maxRow = recursiveConvert(sheet, currRowNum+1, currCellNum+1, currState, result);
             }
         }
+        //очищаем текущее состояние
+        currState.put(cellName, null);
 
         int rowDiff = maxRow - currRowNum;
         int nextRow = currRowNum + rowDiff + 1;
         //исходя из максимальной глубины обхода вычисляем на сколько нужно спуститься вниз
-        Cell nextCellObj = nullSafeGetCell(nextRow, currCellNum, sheet);
-        if(nextCellObj != null){
+        Cell nextCell = nullSafeGetCell(nextRow, currCellNum, sheet);
+        if(nextCell != null){
             //переход на след. элемент текущей вложенности
             return recursiveConvert(sheet, nextRow, currCellNum, currState, result);
         }else{
-            //текущая вложенность закончилась, очищаем состояние и идем назад
-            currState.put(cellName, null);
+            //текущая вложенность закончилась, идем назад
             return maxRow;
         }
     }
@@ -100,8 +101,8 @@ public class ParserServiceImpl implements ParserService {
 
     private void addConsultantToAnswer(Map<String, String> currState, StringBuilder result, Sheet sheet, int row){
         Row sheetRow = sheet.getRow(row);
-        //небезопасно, но по условию =)
-        String newAppend = String.format("('%s', '%s', '%s', '%s', '%s', %s), ",
+        //небезопасно, лучше использовать prepareStatement, но по условию нужно было собрать запрос
+        String newAppend = String.format("('%s', '%s', '%s', '%s', '%s', %d), ",
                 currState.get("Дивизион"),
                 currState.get("Направление"),
                 currState.get("Служба"),
