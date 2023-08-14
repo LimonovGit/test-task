@@ -166,7 +166,7 @@ ru/efko/testtask/service/impl/EventServiceImpl.java
 ======================================================================
 
 public List<Event> getAllByCalendarIdAndBetweenDates(Long calendarId, Date dtStart, Date dtEnd) {
-        return eventRepository.getAllByCalendarIdAndBetweenDates(calendarId, dtStart, dtEnd);
+    return eventRepository.getAllByCalendarIdAndBetweenDates(calendarId, dtStart, dtEnd);
 }
 
 ======================================================================
